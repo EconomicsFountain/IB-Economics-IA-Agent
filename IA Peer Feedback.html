@@ -1,0 +1,306 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>IA Peer Feedback</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<style>
+/* Layout: one compact screen mirroring the paper sheet: details row, rubric grid (criteria x levels), comment boxes row, actions */
+:root {
+  --navy: #202A44;
+  --yellow: #FFCD00;
+  --bg: #FFFFFF;
+  --panel: #F5F6F9;
+  --ink: #1B2133;
+  --muted: #5A6276;
+  --line: #D7DBE4;
+  --sel-bg: #FFF4C2;
+  --sel-line: #D4A800;
+  --head: #202A44;
+  --ok: #1F7A4D;
+  --focus: #2F6FED;
+  --font: "Atkinson Hyperlegible", Verdana, "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12161F; --panel: #1A2030; --ink: #E8EBF1; --muted: #A4ACBF; --line: #2E364A;
+    --sel-bg: rgba(255,205,0,0.16); --sel-line: #FFCD00; --head: #E8EBF1; --ok: #5CC892; --focus: #7FA6FF;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12161F; --panel: #1A2030; --ink: #E8EBF1; --muted: #A4ACBF; --line: #2E364A;
+  --sel-bg: rgba(255,205,0,0.16); --sel-line: #FFCD00; --head: #E8EBF1; --ok: #5CC892; --focus: #7FA6FF;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 16px; line-height: 1.45; }
+.wrap {
+  max-width: 1160px; margin: 0 auto; display: grid; gap: 16px; padding-block: 18px 28px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+button, input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+
+/* Header */
+header { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding-bottom: 10px; border-bottom: 3px solid var(--yellow); }
+h1 { margin: 0; font-size: 24px; font-weight: 700; color: var(--head); line-height: 1.2; }
+h1 small { display: block; font-size: 14px; font-weight: 400; color: var(--muted); margin-bottom: 2px; }
+.total { text-align: right; }
+.total .n { font-size: 30px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; color: var(--head); }
+.total .of { font-size: 13px; color: var(--muted); }
+
+/* Details */
+.details { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+.field { display: grid; gap: 4px; min-width: 0; }
+label, .lab { font-size: 14px; font-weight: 700; color: var(--muted); }
+input, select, textarea { width: 100%; background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; }
+
+/* Rubric grid */
+.rubric-scroll { overflow-x: auto; }
+table.rubric { width: 100%; border-collapse: collapse; table-layout: fixed; min-width: 760px; }
+.rubric th, .rubric td { border: 1px solid var(--line); vertical-align: top; }
+.rubric thead th { background: var(--panel); font-size: 14px; text-align: left; padding: 8px 10px; }
+.rubric thead th:first-child { width: 17%; }
+.rubric th.crit { text-align: left; padding: 10px; font-weight: 700; background: var(--panel); }
+.crit .nm { display: block; font-size: 16px; }
+.crit .mk { display: block; margin-top: 4px; font-size: 14px; font-weight: 400; color: var(--muted); font-variant-numeric: tabular-nums; }
+.crit .mk b { color: var(--ink); }
+tr.done .crit .mk b { color: var(--ok); }
+.rubric td { padding: 0; }
+.lvl {
+  display: block; width: 100%; height: 100%; min-height: 64px; text-align: left; cursor: pointer;
+  background: transparent; border: 0; padding: 9px 10px; font-size: 15px; line-height: 1.4;
+}
+.lvl:hover { background: var(--panel); }
+.lvl[aria-checked="true"] { background: var(--sel-bg); box-shadow: inset 0 0 0 2px var(--sel-line); font-weight: 700; }
+.lvl .lv { display: none; }
+td.na { background: var(--panel); }
+
+/* Comments */
+.comments { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
+.comments textarea { min-height: 96px; resize: vertical; font-size: 15px; }
+
+/* Actions */
+.actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.btn { border-radius: 6px; padding: 9px 16px; font-weight: 700; cursor: pointer; border: 1px solid var(--line); background: var(--bg); }
+.btn:hover { border-color: var(--muted); }
+.btn.primary { background: var(--yellow); border-color: var(--yellow); color: var(--navy); }
+.btn.armed { border-color: #C0392B; color: #C0392B; }
+.status { font-size: 15px; color: var(--ok); font-weight: 700; }
+details summary { cursor: pointer; font-weight: 700; color: var(--muted); font-size: 15px; }
+.preview { margin: 8px 0 0; white-space: pre-wrap; word-break: break-word; font-family: var(--font); font-size: 14px; line-height: 1.5; background: var(--panel); border-radius: 6px; padding: 12px; }
+
+/* Phone: rubric becomes stacked rows */
+@media (max-width: 760px) {
+  table.rubric { min-width: 0; }
+  .rubric thead { display: none; }
+  .rubric, .rubric tbody, .rubric tr, .rubric th, .rubric td { display: block; width: 100%; }
+  .rubric tr { margin-bottom: 12px; }
+  .rubric td.na { display: none; }
+  .lvl { min-height: 0; }
+  .lvl .lv { display: inline; font-weight: 700; color: var(--muted); }
+}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1><small>IB Economics · Internal Assessment</small>Peer feedback sheet</h1>
+    <div class="total" aria-live="polite">
+      <div class="n"><span id="total">0</span> / 14</div>
+      <div class="of" id="marked">0 of 5 criteria marked</div>
+    </div>
+  </header>
+
+  <section class="details" aria-label="Commentary details">
+    <div class="field"><label for="studentNo">Student #</label><input id="studentNo" inputmode="numeric" autocomplete="off" placeholder="e.g. 14"></div>
+    <div class="field"><label for="reviewer">Reviewed by</label><input id="reviewer" autocomplete="off" placeholder="Your name"></div>
+    <div class="field"><label for="unit">Commentary unit</label>
+      <select id="unit"><option value="">Choose…</option><option>Microeconomics</option><option>Macroeconomics</option><option>The global economy</option></select></div>
+    <div class="field"><label for="keyConcept">Key concept used</label>
+      <select id="keyConcept"><option value="">Choose…</option></select></div>
+  </section>
+
+  <div class="rubric-scroll">
+    <table class="rubric" aria-label="Rubric: click one level per criterion">
+      <thead><tr><th>Criterion</th><th>Level 3</th><th>Level 2</th><th>Level 1</th><th>Level 0</th></tr></thead>
+      <tbody id="rubric"></tbody>
+    </table>
+  </div>
+
+  <section aria-label="Feedback comments">
+    <div class="comments" id="comments"></div>
+  </section>
+
+  <div class="actions">
+    <button class="btn primary" id="copyBtn" type="button">Copy feedback</button>
+    <button class="btn" id="saveBtn" type="button" hidden>Save as file</button>
+    <button class="btn" id="resetBtn" type="button">Start a new sheet</button>
+    <span class="status" id="status" role="status" aria-live="polite"></span>
+  </div>
+
+  <details>
+    <summary>Preview what will be copied</summary>
+    <pre class="preview" id="preview"></pre>
+  </details>
+</div>
+
+<script>
+const NONE = "The work does not reach a standard described by the descriptors above.";
+const NONE_SHORT = "Does not reach the standard described.";
+const CRITERIA = [
+  { id: "A", name: "Diagrams", max: 3, hint: "e.g. The diagram clearly shows… Check the labels on…",
+    levels: { 3: "Relevant, accurate and correctly labelled diagram(s) are included, with a full explanation.",
+              2: "Relevant, accurate and correctly labelled diagram(s) are included, with a limited explanation.",
+              1: "Relevant diagram(s) are included but not explained, or the explanations are incorrect.",
+              0: NONE } },
+  { id: "B", name: "Terminology", max: 2, hint: "e.g. Terms like … are used well. Define … when first used.",
+    levels: { 2: "Economic terminology relevant to the article is used appropriately throughout the commentary.",
+              1: "Economic terminology relevant to the article is included in the commentary.",
+              0: NONE } },
+  { id: "C", name: "Application and analysis", max: 3, hint: "e.g. The theory links well when… Use more evidence from the article.",
+    levels: { 3: "Relevant economic theory is applied to the article throughout the commentary with effective economic analysis.",
+              2: "Relevant economic theory is applied to the article throughout the commentary with appropriate economic analysis.",
+              1: "Relevant economic theory is applied to the article with limited analysis.",
+              0: NONE } },
+  { id: "D", name: "Key concept", max: 3, hint: "e.g. The key concept is clearly linked when… Return to it in your evaluation.",
+    short0: "Does not reach the standard described, or the key concept has already been used in another commentary.",
+    levels: { 3: "A key concept is identified and the link to the article is fully explained.",
+              2: "A key concept is identified and the link to the article is partially explained.",
+              1: "A key concept is identified and there has been an attempt to link it to the article.",
+              0: "Either the work does not reach a standard described by the descriptors above, or the key concept identified has already been used in another commentary." } },
+  { id: "E", name: "Evaluation", max: 3, hint: "e.g. Your judgement is well supported by… Consider the other side.",
+    levels: { 3: "Judgments are made that are supported by effective and balanced reasoning.",
+              2: "Judgments are made that are supported by appropriate reasoning.",
+              1: "Judgments are made that are supported by limited reasoning.",
+              0: NONE } }
+];
+const KEY_CONCEPTS = ["Scarcity", "Choice", "Efficiency", "Equity", "Economic well-being", "Sustainability", "Change", "Interdependence", "Intervention"];
+const STORE_KEY = "gihs-ia-peer-feedback-v1";
+
+const blank = () => ({ studentNo: "", reviewer: "", unit: "", keyConcept: "", marks: {}, comments: {} });
+let state = blank();
+try { const s = JSON.parse(localStorage.getItem(STORE_KEY) || "null"); if (s && typeof s === "object") state = Object.assign(blank(), s); } catch (e) {}
+const $ = (id) => document.getElementById(id);
+const save = () => { try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) {} };
+
+function build() {
+  $("keyConcept").insertAdjacentHTML("beforeend", KEY_CONCEPTS.map(k => `<option>${k}</option>`).join(""));
+
+  $("rubric").innerHTML = CRITERIA.map(c => {
+    const cells = [3, 2, 1, 0].map(l => {
+      if (!(l in c.levels)) return `<td class="na" aria-hidden="true"></td>`;
+      const shown = l === 0 ? (c.short0 || NONE_SHORT) : c.levels[l];
+      return `<td><button type="button" class="lvl" role="radio" aria-checked="false" data-c="${c.id}" data-l="${l}" id="lvl-${c.id}-${l}"><span class="lv">Level ${l}: </span>${shown}</button></td>`;
+    }).join("");
+    return `<tr id="row-${c.id}" role="radiogroup" aria-labelledby="nm-${c.id}">
+      <th class="crit" scope="row"><span class="nm" id="nm-${c.id}">${c.id}: ${c.name}</span><span class="mk"><b id="sc-${c.id}">–</b> / ${c.max}</span></th>${cells}</tr>`;
+  }).join("");
+
+  $("comments").innerHTML = CRITERIA.map(c => `<div class="field"><label for="cm-${c.id}">${c.id}: ${c.name}</label>
+    <textarea id="cm-${c.id}" placeholder="${c.hint}"></textarea></div>`).join("");
+
+  $("rubric").addEventListener("click", (e) => {
+    const b = e.target.closest(".lvl"); if (!b) return;
+    const c = b.dataset.c, l = Number(b.dataset.l);
+    if (state.marks[c] === l) delete state.marks[c]; else state.marks[c] = l;
+    save(); render();
+  });
+
+  CRITERIA.forEach(c => {
+    const ta = $("cm-" + c.id);
+    ta.value = state.comments[c.id] || "";
+    ta.addEventListener("input", () => { state.comments[c.id] = ta.value; save(); renderPreview(); });
+  });
+  ["studentNo", "reviewer", "unit", "keyConcept"].forEach(k => {
+    const el = $(k); el.value = state[k] || "";
+    el.addEventListener("input", () => { state[k] = el.value; save(); renderPreview(); });
+  });
+}
+
+function render() {
+  let total = 0, n = 0;
+  CRITERIA.forEach(c => {
+    const m = state.marks[c.id], set = typeof m === "number";
+    if (set) { total += m; n++; }
+    document.querySelectorAll(`.lvl[data-c="${c.id}"]`).forEach(b => b.setAttribute("aria-checked", String(set && Number(b.dataset.l) === m)));
+    $("sc-" + c.id).textContent = set ? m : "–";
+    $("row-" + c.id).classList.toggle("done", set);
+  });
+  $("total").textContent = total;
+  $("marked").textContent = n + " of 5 criteria marked";
+  renderPreview();
+}
+
+function feedbackText() {
+  const L = ["IB ECONOMICS IA: PEER FEEDBACK", "Student #: " + (state.studentNo.trim() || "(not entered)")];
+  if (state.reviewer.trim()) L.push("Reviewed by: " + state.reviewer.trim());
+  if (state.unit) L.push("Commentary unit: " + state.unit);
+  if (state.keyConcept) L.push("Key concept: " + state.keyConcept);
+  L.push("");
+  let total = 0, n = 0;
+  CRITERIA.forEach(c => {
+    const m = state.marks[c.id], set = typeof m === "number";
+    if (set) { total += m; n++; }
+    L.push(`${c.id}: ${c.name}  ${set ? m : "–"}/${c.max}`);
+    if (set) L.push("  Level " + m + ": " + c.levels[m]);
+    const cm = (state.comments[c.id] || "").trim();
+    if (cm) L.push("  Feedback: " + cm);
+    L.push("");
+  });
+  L.push(`COMMENTARY MARK: ${total}/14` + (n < 5 ? `  (${n} of 5 criteria marked)` : ""));
+  return L.join("\n");
+}
+function renderPreview() { $("preview").textContent = feedbackText(); }
+
+let statusTimer;
+function flash(msg) { $("status").textContent = msg; clearTimeout(statusTimer); statusTimer = setTimeout(() => $("status").textContent = "", 3500); }
+
+$("copyBtn").addEventListener("click", () => {
+  const fallback = () => {
+    document.querySelector("details").open = true;
+    const r = document.createRange(); r.selectNodeContents($("preview"));
+    const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r);
+    flash("Text selected. Press Ctrl+C (or ⌘C) to copy.");
+  };
+  try { navigator.clipboard.writeText(feedbackText()).then(() => flash("Copied."), fallback); } catch (e) { fallback(); }
+});
+
+let armed = false, armTimer;
+$("resetBtn").addEventListener("click", () => {
+  const b = $("resetBtn");
+  const disarm = () => { armed = false; b.textContent = "Start a new sheet"; b.classList.remove("armed"); };
+  if (!armed) { armed = true; b.textContent = "Click again to clear"; b.classList.add("armed"); armTimer = setTimeout(disarm, 4000); return; }
+  clearTimeout(armTimer); disarm();
+  state = blank(); save();
+  ["studentNo", "reviewer", "unit", "keyConcept"].forEach(id => $(id).value = "");
+  CRITERIA.forEach(c => $("cm-" + c.id).value = "");
+  render(); flash("Cleared."); window.scrollTo({ top: 0 });
+});
+
+build();
+render();
+
+(async () => {
+  try {
+    const downloads = window.claude && window.claude.use ? await window.claude.use("downloads") : null;
+    if (!downloads) return;
+    const btn = $("saveBtn"); btn.hidden = false;
+    btn.addEventListener("click", async () => {
+      const num = (state.studentNo.trim() || "student").replace(/[^\w-]+/g, "-");
+      try {
+        const r = await downloads.save({ filename: `IA-peer-feedback-${num}.txt`, data: feedbackText() });
+        if (r && r.status === "saved") flash("Saved.");
+      } catch (e) {
+        if (e && e.code === "declined") return;
+        if (e && e.code === "rate_limited") { flash("A save prompt is already open."); return; }
+        btn.hidden = true; flash("Saving isn't available here. Use Copy feedback instead.");
+      }
+    });
+  } catch (e) {}
+})();
+</script>
+
+</body></html>
